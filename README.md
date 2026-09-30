@@ -1,4 +1,4 @@
-# SOEN-342-Project-
+# SOEN-342-Project
 Team Members: 
 1) Sarvesh Sai Rajesh - 40231819
 2) Alex Khoury - 40299086
