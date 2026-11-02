@@ -1,6 +1,8 @@
 package booking;
 
-import java.time.LocalDateTime, java.util.ArrayList, java.util.List;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Note: GRASP Controller for the three system operations of Iteration 1 critical use case C1.
  *  also only the booking portion of the Iteration 2 proof of concept is implemented here

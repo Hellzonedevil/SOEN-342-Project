@@ -1,6 +1,7 @@
 package booking;
 
-import java.util.ArrayList, java.util.List;
+import java.util.ArrayList;
+import java.util.List;
 
 // this is simply a minimal booking-event record to satisfy the C1 operation contract from Iteration 1 
 public class BookingAuditLog {

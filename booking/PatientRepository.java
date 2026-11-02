@@ -1,6 +1,9 @@
 package booking;
 
-import java.util.ArrayList, java.util.LinkedHashMap, java.util.List, java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 // this is basically an in-memory patient lookup 
 // (NOTE: WE STILL NEED THE PATIENT REGISTRATION TO DO THIS, BUT FOR NOW I FIGURED WE CAN JUST ADD PATIENTS DIRECTLY)

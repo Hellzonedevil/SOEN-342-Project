@@ -1,6 +1,7 @@
 package booking;
 
-import java.util.ArrayList, java.util.List;
+import java.util.ArrayList;
+import java.util.List;
 
 // this basically represents the storage for the prototype's appointments in memory (also im making with the idea that no database is required in Iteration II)
 public class AppointmentRepository {
