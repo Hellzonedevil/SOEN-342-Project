@@ -18,10 +18,17 @@ public class AppointmentRepository {
     }
 
     // nnote that this is being called only after BookingService has validated the booking
-    public Appointment create(Patient patient, String professionalId, String locationId, String serviceId, TimeInterval interval, String referralId) {
-        Appointment appointment = new Appointment("APT-" + nextId++, patient, professionalId, locationId, serviceId, interval, referralId);
+    public Appointment create(Patient patient, String professionalId, String locationId, String serviceId,
+            TimeInterval interval, String referralId) {
+        Appointment appointment = new Appointment("APT-" + nextId++, patient, professionalId, locationId, serviceId,
+                interval, referralId);
         appointments.add(appointment);
         return appointment;
+    }
+
+    public Appointment create(Patient patient, String professionalId, String serviceId, TimeInterval interval,
+            String referralId) {
+        return create(patient, professionalId, null, serviceId, interval, referralId);
     }
 
     public List<Appointment> getAll() {

@@ -18,6 +18,10 @@ public class TimeInterval {
     public LocalDateTime getStartsAt() { return startsAt; }
     public LocalDateTime getEndsAt() { return endsAt; }
 
+    public boolean contains(TimeInterval other) {
+        return !startsAt.isAfter(other.startsAt) && !endsAt.isBefore(other.endsAt);
+    }
+
     // as suggested by AI, i went with with half-open intervals, which is somehting like this: [start, end). Also keep in mind that adjacent bookings do not conflict.
     public boolean overlaps(TimeInterval other) {
         return startsAt.isBefore(other.endsAt) && other.startsAt.isBefore(endsAt);
