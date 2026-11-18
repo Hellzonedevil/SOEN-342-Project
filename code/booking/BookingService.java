@@ -44,16 +44,18 @@ public class BookingService {
     }
 
     //C1: validate, then create and confirm exactly one appointment. For now, availability is checked again even if a prior search returned this slot.
-    public Appointment bookAppointment(String patientId, String professionalId, String serviceId, LocalDateTime startsAt, LocalDateTime endsAt, String referralId) {
+    // Iteration I feedback: no endsAt parameter, the end time is derived from the duration of the selected service.
+    public Appointment bookAppointment(String patientId, String professionalId, String serviceId, LocalDateTime startsAt, String referralId) {
         Patient patient = patients.findById(patientId);
         if (patient == null) {
             throw new BookingException("PATIENT_NOT_FOUND");
         }
         verifyReferences(professionalId, serviceId);
-        if (startsAt == null || endsAt == null || !startsAt.isBefore(endsAt)) {
+        int durationMinutes = catalog.getDurationMinutes(serviceId);
+        if (startsAt == null || durationMinutes <= 0) {
             throw new BookingException("INVALID_BOOKING_DATA");
         }
-        TimeInterval proposed = new TimeInterval(startsAt, endsAt);
+        TimeInterval proposed = new TimeInterval(startsAt, startsAt.plusMinutes(durationMinutes));
 
         // here, the referral validation precedes the creation. Also the referral is optional only if the selected medical service does not require one
         if (catalog.requiresReferral(serviceId) && (referralId == null || referralId.isBlank())) {

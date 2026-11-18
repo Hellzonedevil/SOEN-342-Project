@@ -101,7 +101,7 @@ public class AvailabilityServiceTest {
         patients.add(patient);
         BookingCatalog catalog = new BookingCatalog() {
             @Override public boolean professionalExists(String professionalId) { return PROFESSIONAL_ID.equals(professionalId); }
-            @Override public boolean locationExists(String locationId) { return true; }
+            @Override public int getDurationMinutes(String serviceId) { return 60; }
             @Override public boolean serviceExists(String serviceId) { return SERVICE_ID.equals(serviceId); }
             @Override public boolean requiresReferral(String serviceId) { return false; }
             @Override public boolean referralIsEligible(String referralId, String patientId, String professionalId, String serviceId) { return true; }
@@ -113,7 +113,7 @@ public class AvailabilityServiceTest {
         check(booking.findAvailableSlots(PROFESSIONAL_ID, SERVICE_ID, day).size() == 3,
                 "all candidates should be available before booking");
         Appointment booked = booking.bookAppointment("PAT-1", PROFESSIONAL_ID, SERVICE_ID,
-                LocalDateTime.of(2026, 1, 5, 10, 0), LocalDateTime.of(2026, 1, 5, 11, 0), null);
+                LocalDateTime.of(2026, 1, 5, 10, 0), null);
         check(booked.getLocationId() == null, "booking without a location parameter should leave location unspecified");
         List<TimeInterval> remaining = booking.findAvailableSlots(PROFESSIONAL_ID, SERVICE_ID, day);
         check(remaining.size() == 2, "booking should remove only the conflicting candidate from search");

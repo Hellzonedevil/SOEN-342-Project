@@ -28,6 +28,11 @@ public class ProfessionalRepository {
     }
 
     public HealthcareProfessional findOrCreate(String firstName, String lastName, String title) {
+        return findOrCreate(firstName, lastName, title, null);
+    }
+
+    /** Used by the CSV import: reuses a professional with the same name and title, otherwise creates one. */
+    public HealthcareProfessional findOrCreate(String firstName, String lastName, String title, Specialty specialty) {
         String normalizedFirstName = normalizeRequired(firstName, "First name");
         String normalizedLastName = normalizeRequired(lastName, "Last name");
         String normalizedTitle = normalizeRequired(title, "Title");
@@ -49,7 +54,7 @@ public class ProfessionalRepository {
         } while (professionals.containsKey(professionalId));
 
         HealthcareProfessional created = new HealthcareProfessional(
-                professionalId, normalizedFirstName, normalizedLastName, normalizedTitle);
+                professionalId, normalizedFirstName, normalizedLastName, normalizedTitle, specialty);
         add(created);
         return created;
     }
