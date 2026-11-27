@@ -4,9 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Note: GRASP Controller for the three system operations of Iteration 1 critical use case C1.
- *  also only the booking portion of the Iteration 2 proof of concept is implemented here
- */
+/** GRASP Controller for patient search, availability lookup, and appointment management. */
 public class BookingService {
     private final PatientRepository patients;
     private final AppointmentRepository appointments;
@@ -73,6 +71,42 @@ public class BookingService {
         Appointment booked = appointments.create(patient, professionalId, serviceId, proposed, referralId);
         auditLog.recordBooked(booked.getAppointmentId());
         return booked;
+    }
+
+    /** Cancels a confirmed appointment while retaining its record for history. */
+    public Appointment cancelAppointment(String appointmentId) {
+        Appointment appointment = appointments.findById(appointmentId);
+        if (appointment == null) {
+            throw new BookingException("APPOINTMENT_NOT_FOUND");
+        }
+        if (!"CONFIRMED".equals(appointment.getStatus())) {
+            throw new BookingException("APPOINTMENT_NOT_CANCELLABLE");
+        }
+        appointments.cancel(appointmentId);
+        auditLog.recordCancelled(appointmentId);
+        return appointments.findById(appointmentId);
+    }
+
+    /** Moves a confirmed appointment only when its new interval remains available. */
+    public Appointment rescheduleAppointment(String appointmentId, LocalDateTime newStartsAt) {
+        Appointment appointment = appointments.findById(appointmentId);
+        if (appointment == null) {
+            throw new BookingException("APPOINTMENT_NOT_FOUND");
+        }
+        if (!"CONFIRMED".equals(appointment.getStatus())) {
+            throw new BookingException("APPOINTMENT_NOT_RESCHEDULABLE");
+        }
+        int durationMinutes = catalog.getDurationMinutes(appointment.getServiceId());
+        if (newStartsAt == null || durationMinutes <= 0) {
+            throw new BookingException("INVALID_BOOKING_DATA");
+        }
+        TimeInterval proposed = new TimeInterval(newStartsAt, newStartsAt.plusMinutes(durationMinutes));
+        if (!availability.isAvailable(appointment.getProfessionalId(), appointment.getServiceId(), proposed) || appointments.hasConflict(appointment.getProfessionalId(), proposed, appointment.getAppointmentId())) {
+            throw new BookingException("SLOT_UNAVAILABLE");
+        }
+        appointments.reschedule(appointmentId, proposed);
+        auditLog.recordRescheduled(appointmentId);
+        return appointments.findById(appointmentId);
     }
 
     private void verifyReferences(String professionalId, String serviceId) {

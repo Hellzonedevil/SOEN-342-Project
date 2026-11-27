@@ -12,6 +12,14 @@ public class BookingAuditLog {
         events.add("APPOINTMENT_BOOKED " + appointmentId);
     }
 
+    public void recordCancelled(String appointmentId) {
+        events.add("APPOINTMENT_CANCELLED " + appointmentId);
+    }
+
+    public void recordRescheduled(String appointmentId) {
+        events.add("APPOINTMENT_RESCHEDULED " + appointmentId);
+    }
+
     public List<String> getEvents() {
         return new ArrayList<>(events);
     }

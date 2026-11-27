@@ -12,6 +12,7 @@ import booking.Specialty;
 import booking.TimeInterval;
 import csv.CsvException;
 import csv.ImportResult;
+import persistence.PersistenceException;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +30,7 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.Set;
 
-/** Command-line front end of the Iteration II proof of concept. It only reads input, calls the services and prints. */
+/** Command-line front end. It reads input, calls the services, and prints their results. */
 public class ClinicCLI {
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
@@ -45,14 +46,17 @@ public class ClinicCLI {
     }
 
     public static void main(String[] args) {
-        AppContext context = new AppContext();
-        context.seedDemoData();
-        PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
-        new ClinicCLI(context, new Scanner(System.in, StandardCharsets.UTF_8), out).run();
+        try (AppContext context = new AppContext(Paths.get("clinic.db"))) {
+            context.seedDemoData();
+            PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
+            new ClinicCLI(context, new Scanner(System.in, StandardCharsets.UTF_8), out).run();
+        } catch (PersistenceException exception) {
+            System.err.println("ERROR: " + exception.getMessage());
+        }
     }
 
     public void run() {
-        out.println("=== Appointment Tracking System - Iteration II proof of concept ===");
+        out.println("=== Appointment Tracking System - Iteration III ===");
         while (true) {
             out.println();
             out.println("1. Make availability");
@@ -61,6 +65,8 @@ public class ClinicCLI {
             out.println("4. Import availability from CSV");
             out.println("5. Export availability to CSV");
             out.println("6. List professionals and services");
+            out.println("7. Cancel appointment");
+            out.println("8. Reschedule appointment");
             out.println("0. Exit");
             String choice = ask("Choice: ");
             if (choice == null || choice.equals("0")) {
@@ -75,6 +81,8 @@ public class ClinicCLI {
                     case "4" -> importCsv();
                     case "5" -> exportCsv();
                     case "6" -> listReferenceData();
+                    case "7" -> cancelAppointment();
+                    case "8" -> rescheduleAppointment();
                     default -> out.println("Please choose a number from the menu.");
                 }
             } catch (BookingException e) {
@@ -176,6 +184,43 @@ public class ClinicCLI {
         Path path = Paths.get(require("CSV file to write: "));
         int count = context.getExporter().exportAvailability(path);
         out.println("EXPORTED: " + count + " slot(s) written to " + path);
+    }
+
+    void cancelAppointment() {
+        Appointment appointment = chooseAppointment();
+        if (appointment == null) {
+            return;
+        }
+        Appointment cancelled = context.getBookingService().cancelAppointment(appointment.getAppointmentId());
+        out.println("CANCELLED: " + cancelled.getAppointmentId());
+    }
+
+    void rescheduleAppointment() {
+        Appointment appointment = chooseAppointment();
+        if (appointment == null) {
+            return;
+        }
+        LocalDateTime newStartsAt = LocalDateTime.parse(require("New start (yyyy-MM-dd HH:mm): "), DATE_TIME);
+        Appointment rescheduled = context.getBookingService().rescheduleAppointment(appointment.getAppointmentId(), newStartsAt);
+        out.println("RESCHEDULED: " + rescheduled.getAppointmentId() + "  " + format(rescheduled.getInterval()));
+    }
+
+    private Appointment chooseAppointment() {
+        List<Appointment> appointments = context.getAppointments().getAll();
+        if (appointments.isEmpty()) {
+            out.println("No appointments have been booked.");
+            return null;
+        }
+        for (Appointment appointment : appointments) {
+            out.println("  " + appointment.getAppointmentId() + "  " + appointment.getStatus() + "  " + format(appointment.getInterval()));
+        }
+        String id = require("Appointment ID: ");
+        for (Appointment appointment : appointments) {
+            if (appointment.getAppointmentId().equalsIgnoreCase(id)) {
+                return appointment;
+            }
+        }
+        throw new BookingException("APPOINTMENT_NOT_FOUND");
     }
 
     void listReferenceData() {
