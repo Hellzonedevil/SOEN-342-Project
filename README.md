@@ -7,30 +7,34 @@ Team Members:
 
 ## How to compile and run (Java 17 or newer)
 
-Run these from the repository root.
+Run the commands from the repository root. The CLI stores its data in `clinic.db` in the current directory. Maven downloads the SQLite JDBC driver declared in `pom.xml`.
 
 **macOS / Linux / Git Bash**
 ```sh
-javac -encoding UTF-8 -d out $(find code test -name "*.java")
-java -cp out app.ClinicCLI
+mvn dependency:copy-dependencies
+javac -encoding UTF-8 -cp "target/dependency/*" -d out $(find code test -name "*.java")
+java -cp "out:target/dependency/*" app.ClinicCLI
 ```
 
 **Windows PowerShell**
 ```powershell
-javac -encoding UTF-8 -d out (Get-ChildItem -Recurse code,test -Filter *.java).FullName
-java -cp out app.ClinicCLI
+mvn dependency:copy-dependencies
+javac -encoding UTF-8 -cp "target/dependency/*" -d out (Get-ChildItem -Recurse code,test -Filter *.java).FullName
+java -cp "out;target/dependency/*" app.ClinicCLI
 ```
 
-**Tests**
+For an in-memory setup, instantiate `new AppContext()` as the existing examples do.
+
+**Existing test programs** (run after compiling):
 ```sh
-java -cp out booking.AvailabilityServiceTest
-java -cp out csv.CsvImportExportTest
-java -cp out app.ClinicCLITest
+java -cp "out:target/dependency/*" booking.AvailabilityServiceTest
+java -cp "out:target/dependency/*" csv.CsvImportExportTest
+java -cp "out:target/dependency/*" app.ClinicCLITest
 ```
 
 **Quick demo** (menu numbers in brackets): import `data/availability_sample.csv` [4] -> list professionals and services [6] ->
 search availability for `PRO-1`, `SRV-1`, 2026-11-02 [2] -> book patient "Lavoie" at `2026-11-02 09:00` [3] ->
-search again (09:00 is gone) [2] -> make weekly availability for a new professional [1] -> export to a file [5].
+cancel [7] or reschedule [8] an appointment -> export availability to a file [5].
 `data/availability_with_errors.csv` shows how bad rows are rejected by line number.
 
 Here's my module (as member 1 from our task division) with the 3 C1 entry points in BookingService:
@@ -38,14 +42,14 @@ Here's my module (as member 1 from our task division) with the 3 C1 entry points
 2. `findAvailableSlots(professionalId, serviceId, interval)` - delegates to Member 2's availability module and excludes already booked appointments
 3. `bookAppointment(patientId, professionalId, serviceId, startsAt, referralId)` - (no `endsAt`: the end time is `startsAt` + the service duration, per the Iteration 1 feedback) validates the references, rechecks the selected interval, checks required referrals, creates a `CONFIRMED` appointment and records a minimal booking audit event.
 
+The same service supports cancellation and rescheduling; rescheduling rechecks the current schedule and overlapping bookings.
 
-Extra Notes:
-Iteration 2's new waitlist and predefined resource requirements are analysed (but not coded) by me, as Member #1, in the word document. The interation 2 instructions suggest deferring the design of these additions until Iteration 3, so thats why. 
-Also, since the database is optional, no persistence is included.
 
-When it comes to my module aka member 2. It is implemented by `AvailabilityService`, `AvailabilityRule`,
+The CLI's `AppContext` uses SQLite to persist patients, professionals, specialties, services, availability schedules, and appointments. The no-argument `AppContext` remains in-memory for the existing examples and tests.
+
+The availability module is implemented by `AvailabilityService`, `AvailabilityRule`,
 `RepetitionRule`, `AvailabilitySlot`, and `AvailabilityRepository`. Recurring weekly and monthly
-rules create professional schedule intervals in memory. The service uses a `ServiceDurationProvider`
+rules create professional schedule intervals. The CLI persists these schedules in SQLite. The service uses a `ServiceDurationProvider`
 adapter to obtain appointment lengths from the shared service catalog while the integrated booking service
 continues to filter candidates that conflict with existing appointments.
 
@@ -64,4 +68,3 @@ When it comes to member 3 (CSV import/export, CLI and integration):
 - Small integration changes in `booking`: `bookAppointment` no longer takes `endsAt`, `BookingCatalog` lost
   `locationExists` and extends `ServiceDurationProvider`, and `HealthcareProfessional` has an optional `Specialty`
   so the CSV specialty column survives an import/export round trip.
-
